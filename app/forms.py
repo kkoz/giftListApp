@@ -1,5 +1,5 @@
 from flask_wtf import Form
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, EqualTo, ValidationError, Email, Length
 from app.models import User
 
@@ -34,4 +34,16 @@ class EditProfileForm(Form):
   submit = SubmitField('Submit')
 
 class CreateListForm(Form):
-  listname = StringField('List Name', validators=[DataRequired()])
+  list_name = StringField('List Name', validators=[DataRequired()])
+  submit = SubmitField('Create')
+
+class AddListItem(Form):
+  item_name = StringField('Item Name', validators=[DataRequired()])
+  description = TextAreaField('Description', validators=[Length(min=0, max=140)])
+  link_url = StringField('Link URL')
+  submit = SubmitField('Add')
+
+class ClaimListItem(Form):
+  list_item_id = HiddenField('Item ID', validators=[DataRequired()])
+  claim = BooleanField('Claim', validators=[DataRequired()])
+  submit = SubmitField('Claim')

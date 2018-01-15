@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script src="/static/test.js"></script>
+<h1>{{ list.list_name }}</h1>
+<h2>By: {{ list.author.username }}</h2>
+{% if list.creator_id == current_user.user_id %}
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.item_name.label }}<br>
+        {{ form.item_name(size=64) }}<br>
+        {% for error in form.item_name.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.description.label }}<br>
+        {{ form.description(cols=50, rows=5) }}<br>
+        {% for error in form.description.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.link_url.label }}<br>
+        {{ form.link_url(size=256) }}<br>
+        {% for error in form.link_url.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </p>
+    <p>{{ form.submit }}</p>
+</form>
+{% endif %}
+<table>
+    {% for item in list_items %}
+    <tr>
+        <td>{{ item.item_name }}</td>
+        <td>{{ item.description or ''}}</td>
+        <td><button onclick="getClaimHandler('{{ item.list_item_id }}')">Test</button> </td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+{% endblock %}

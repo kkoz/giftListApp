@@ -104,13 +104,13 @@ def edit_list(list_id):
   list = List.query.filter_by(list_id=list_id).first_or_404()
   list_items = ListItem.query.filter_by(list_id=list_id).all()
   if list.creator_id == current_user.user_id:
-    form = AddListItem()
-    if form.validate_on_submit():
+    add_item_form = AddListItem()
+    if add_item_form.validate_on_submit():
       item = ListItem(list_id=list_id,
                       list_item_id=uuid.uuid4().hex,
-                      item_name=form.item_name.data,
-                      description=form.description.data,
-                      link_url=form.link_url.data)
+                      item_name=add_item_form.item_name.data,
+                      description=add_item_form.description.data,
+                      link_url=add_item_form.link_url.data)
       db.session.add(item)
       db.session.commit()
       list_items = ListItem.query.filter_by(list_id=list_id).all()
@@ -118,20 +118,25 @@ def edit_list(list_id):
                              title='Edit List',
                              list=list,
                              list_items=list_items,
-                             form=form)
+                             add_item_form=add_item_form)
     return render_template("edit_list.html",
                            title='Edit List',
                            list=list,
                            list_items=list_items,
-                           form=form)
+                           add_item_form=add_item_form)
   else:
-    form = ClaimListItem()
+    claim_item_form = ClaimListItem()
     return render_template('edit_list.html',
                          title='Edit List',
-                         form=form)
+                           claim_item_form=claim_item_form)
 
 @app.route('/claim_item/<item_id>', methods=['POST'])
 @login_required
 def claim_item(item_id):
   print('In AJAX endpoint')
+  print(current_user.username)
+  print(item_id)
+  print(request.json)
+  item = ListItem.query.filter_by(list_item_id=item_id).first()
+
   return jsonify({'successful' : True})

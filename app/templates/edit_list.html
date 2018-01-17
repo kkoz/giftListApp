@@ -2,34 +2,35 @@
 
 {% block content %}
 
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
 <script src="/static/test.js"></script>
 <h1>{{ list.list_name }}</h1>
 <h2>By: {{ list.author.username }}</h2>
 {% if list.creator_id == current_user.user_id %}
 <form action="" method="post">
-    {{ form.hidden_tag() }}
+    {{ add_item_form.hidden_tag() }}
     <p>
-        {{ form.item_name.label }}<br>
-        {{ form.item_name(size=64) }}<br>
-        {% for error in form.item_name.errors %}
+        {{ add_item_form.item_name.label }}<br>
+        {{ add_item_form.item_name(size=64) }}<br>
+        {% for error in add_item_form.item_name.errors %}
         <span style="color: red;">[{{ error }}]</span>
         {% endfor %}
     </p>
     <p>
-        {{ form.description.label }}<br>
-        {{ form.description(cols=50, rows=5) }}<br>
-        {% for error in form.description.errors %}
+        {{ add_item_form.description.label }}<br>
+        {{ add_item_form.description(cols=50, rows=5) }}<br>
+        {% for error in add_item_form.description.errors %}
         <span style="color: red;">[{{ error }}]</span>
         {% endfor %}
     </p>
     <p>
-        {{ form.link_url.label }}<br>
-        {{ form.link_url(size=256) }}<br>
-        {% for error in form.link_url.errors %}
+        {{ add_item_form.link_url.label }}<br>
+        {{ add_item_form.link_url(size=256) }}<br>
+        {% for error in add_item_form.link_url.errors %}
         <span style="color: red;">[{{ error }}]</span>
         {% endfor %}
     </p>
-    <p>{{ form.submit }}</p>
+    <p>{{ add_item_form.submit }}</p>
 </form>
 {% endif %}
 <table>

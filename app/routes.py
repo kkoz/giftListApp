@@ -1,9 +1,10 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify
 from app import app, db
-from .forms import LoginForm, RegistrationForm, EditProfileForm, CreateListForm, AddListItem, ClaimListItem
+from .forms import LoginForm, RegistrationForm, EditProfileForm,\
+  CreateListForm, AddListItem, ClaimListItem, AddListPermission
 import uuid
 from flask_login import current_user, login_user, logout_user, login_required
-from app.models import User, List, ListItem
+from app.models import User, List, ListItem, ListPermission
 from werkzeug.urls import url_parse
 from datetime import datetime
 
@@ -83,6 +84,18 @@ def edit_profile():
                          title='Edit Profile',
                          form=form)
 
+@app.route('/my_lists')
+@login_required
+def my_lists():
+  my_lists = List.query.filter_by(creator_id=current_user.user_id).all()
+  lists_permissions = ListPermission.query.filter_by(user_id=current_user.user_id).all()
+  list_ids = list(map(lambda perm: perm.list_id, lists_permissions))
+
+  lists_with_permission = List.query.filter(List.list_id.in_(list_ids)).all()
+  return render_template('my_lists.html',
+                         my_lists=my_lists,
+                         lists_with_permission=lists_with_permission)
+
 @app.route('/create_list', methods=['GET','POST'])
 @login_required
 def create_list():
@@ -106,6 +119,7 @@ def edit_list(list_id):
   if list.creator_id == current_user.user_id:
     add_item_form = AddListItem()
     if add_item_form.validate_on_submit():
+      print("Submitted add_item_form")
       item = ListItem(list_id=list_id,
                       list_item_id=uuid.uuid4().hex,
                       item_name=add_item_form.item_name.data,
@@ -119,24 +133,79 @@ def edit_list(list_id):
                              list=list,
                              list_items=list_items,
                              add_item_form=add_item_form)
+
     return render_template("edit_list.html",
                            title='Edit List',
                            list=list,
                            list_items=list_items,
                            add_item_form=add_item_form)
   else:
-    claim_item_form = ClaimListItem()
-    return render_template('edit_list.html',
-                         title='Edit List',
-                           claim_item_form=claim_item_form)
+    permitted_users = ListPermission.query.filter_by(list_id=list_id).all()
+    this_user_list = [user for user in permitted_users if user.user_id == current_user.user_id]
+    print("This user's ID: {}".format(current_user.user_id))
+    print("Permitted user's IDs")
+    for user in permitted_users:
+      print(user.user_id)
+    if len(this_user_list) > 0:
+      return render_template('edit_list.html',
+                             list=list,
+                             list_items=list_items,
+                             title='Edit List')
+    else:
+      flash("You are not permitted to edit this list")
+      return redirect(url_for('index'))
+
+@app.route('/add_list_permission/<list_id>', methods=['GET','POST'])
+@login_required
+def add_list_permission(list_id):
+  list = List.query.filter_by(list_id=list_id).first_or_404()
+  permissions = ListPermission.query.filter_by(list_id=list_id).all()
+  list_permission_form = AddListPermission()
+  if list_permission_form.validate_on_submit():
+    print("submitted list_permission_form")
+    user_to_add = User.query.filter_by(username=list_permission_form.username.data).first()
+    if user_to_add is not None:
+      permission = ListPermission(list_id=list_id,
+                                  user_id=user_to_add.user_id,
+                                  list_permission_id=uuid.uuid4().hex)
+      db.session.add(permission)
+      db.session.commit()
+      flash("Granted user '{}' permissions on list".format(user_to_add.username))
+      permissions = ListPermission.query.filter_by(list_id=list_id).all()
+      return render_template("add_list_permission.html",
+                             title='Edit List',
+                             list=list,
+                             permissions=permissions,
+                             list_permission_form=list_permission_form)
+    else:
+      print("User '{}' does not exist".format(list_permission_form.username.data))
+      flash("User '{}' does not exist".format(list_permission_form.username.data))
+  return render_template("add_list_permission.html",
+                             title='Edit List',
+                             list=list,
+                             list_permission_form=list_permission_form)
 
 @app.route('/claim_item/<item_id>', methods=['POST'])
 @login_required
 def claim_item(item_id):
-  print('In AJAX endpoint')
-  print(current_user.username)
-  print(item_id)
-  print(request.json)
-  item = ListItem.query.filter_by(list_item_id=item_id).first()
-
-  return jsonify({'successful' : True})
+  list_item = ListItem.query.filter_by(list_item_id=item_id).first()
+  print("claim_item for item {}".format(list_item.list_item_id))
+  if list_item is not None:
+    #Check if user is permitted to edit list
+    permission = ListPermission.query.filter_by(list_id=list_item.list_id).first()
+    if permission is not None:
+      #Check if the item has been claimed
+      print("User has permission")
+      if list_item.purchaser_id is None:
+        print("no current purchaser")
+        list_item.purchaser_id = current_user.user_id
+        return jsonify({'claim_successful': True})
+      else:
+        #Someone else has claimed it
+        print("Someone else has claimed this")
+        return jsonify({'claim_successful' : False, 'message': 'Item is already claimed'})
+    else:
+      print("No permission to edit")
+      return jsonify({'claim_successful': False, 'message': "User doesn't have permissions on this list"})
+  else:
+    return jsonify({'claim_successful': False, 'message': "List does not exist"})

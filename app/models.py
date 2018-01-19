@@ -36,8 +36,16 @@ class List(db.Model):
   creator_id = db.Column(db.String(32), db.ForeignKey('user.user_id'))
   items = db.relationship('ListItem', backref='list', lazy='dynamic', cascade='all, delete-orphan')
   create_timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+  permissions = db.relationship('ListPermission', backref='list', lazy='dynamic', cascade='all, delete-orphan')
   def __repr__(self):
     return '<List {}>'.format(self.list_name)
+
+class ListPermission(db.Model):
+  list_permission_id = db.Column(db.String(32), primary_key=True)
+  list_id = db.Column(db.String(32), db.ForeignKey('list.list_id'))
+  user_id = db.Column(db.String(32), db.ForeignKey('user.user_id'))
+  def __repr__(self):
+    return '<ListPermission {} -> {}>'.format(self.user_id, self.list_id)
 
 
 class ListItem(db.Model):

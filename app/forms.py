@@ -46,3 +46,7 @@ class AddListItem(Form):
 class ClaimListItem(Form):
   list_item_id = HiddenField('Item ID', validators=[DataRequired()])
   claim = BooleanField('Claim', validators=[DataRequired()])
+
+class AddListPermission(Form):
+  username = StringField('Username', validators=[DataRequired()])
+  submit = SubmitField('Add')

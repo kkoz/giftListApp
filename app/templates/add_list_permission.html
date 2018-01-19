@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>{{ list.list_name }}</h1>
+<h2>By: {{ list.author.username }}</h2>
+
+{% if list.creator_id == current_user.user_id %}
+<h3>Grant User Permission</h3>
+<form action="" method="post">
+    {{ list_permission_form.hidden_tag() }}
+    <p>
+        {{ list_permission_form.username.label }}
+        {{ list_permission_form.username(size=64) }}
+        {% for error in list_permission_form.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </p>
+    <p>{{ list_permission_form.submit }}</p>
+</form>
+
+{% endif %}
+
+<a href="{{ url_for('edit_list', list_id=list.list_id) }}">Return to List</a>
+
+{% endblock %}

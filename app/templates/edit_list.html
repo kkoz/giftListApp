@@ -6,7 +6,13 @@
 <script src="/static/test.js"></script>
 <h1>{{ list.list_name }}</h1>
 <h2>By: {{ list.author.username }}</h2>
+
 {% if list.creator_id == current_user.user_id %}
+
+<a href="{{ url_for('add_list_permission', list_id=list.list_id) }}">Add List Permission</a>
+
+<h3>Add Item</h3>
+
 <form action="" method="post">
     {{ add_item_form.hidden_tag() }}
     <p>
@@ -33,15 +39,20 @@
     <p>{{ add_item_form.submit }}</p>
 </form>
 {% endif %}
+{% if list_items|length > 0 %}
 <table>
+    <tr>
+        <th>Item Name</th>
+        <th>Description</th>
+    </tr>
     {% for item in list_items %}
     <tr>
         <td>{{ item.item_name }}</td>
         <td>{{ item.description or ''}}</td>
-        <td><button onclick="getClaimHandler('{{ item.list_item_id }}')">Test</button> </td>
+        <td><button onclick="getClaimHandler('{{ item.list_item_id }}')">Claim</button> </td>
     </tr>
     {% endfor %}
 </table>
-
+{% endif %}
 
 {% endblock %}

@@ -2,8 +2,6 @@
 
 {% block content %}
 
-<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
-<script src="/static/test.js"></script>
 <h1>{{ list.list_name }}</h1>
 <h2>By: {{ list.author.username }}</h2>
 
@@ -40,19 +38,19 @@
 </form>
 {% endif %}
 {% if list_items|length > 0 %}
-<table>
-    <tr>
-        <th>Item Name</th>
-        <th>Description</th>
-    </tr>
-    {% for item in list_items %}
-    <tr>
-        <td>{{ item.item_name }}</td>
-        <td>{{ item.description or ''}}</td>
-        <td><button onclick="getClaimHandler('{{ item.list_item_id }}')">Claim</button> </td>
-    </tr>
-    {% endfor %}
-</table>
+
+<div id="list_container"></div>
+
+<script type="text/javascript">
+    var list_id = '{{ list.list_id }}'
+    var user_id = '{{ user_id }}'
+</script>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/bundle.js') }}"></script>
+
+</script>
+
 {% endif %}
+
 
 {% endblock %}

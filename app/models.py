@@ -58,6 +58,16 @@ class ListItem(db.Model):
   create_timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
   def __repr__(self):
     return '<ListItem {}>'.format(self.item_name)
+  def to_dict(self):
+    return {
+      "list_id": self.list_id,
+      "list_item_id": self.list_item_id,
+      "item_name": self.item_name,
+      "description": self.description,
+      "link_url": self.link_url,
+      "purchaser_id": self.purchaser_id,
+      "create_timestamp": self.create_timestamp
+    }
 
 class Friendhip(db.Model):
   friendship_id = db.Column(db.String(32), primary_key=True)

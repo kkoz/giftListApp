@@ -1,5 +1,6 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify
 from app import app, db
+from sqlalchemy import and_
 from .forms import LoginForm, RegistrationForm, EditProfileForm,\
   CreateListForm, AddListItem, ClaimListItem, AddListPermission
 import uuid
@@ -132,12 +133,14 @@ def edit_list(list_id):
                              title='Edit List',
                              list=list,
                              list_items=list_items,
-                             add_item_form=add_item_form)
+                             add_item_form=add_item_form,
+                             user_id=current_user.user_id)
 
     return render_template("edit_list.html",
                            title='Edit List',
                            list=list,
                            list_items=list_items,
+                           user_id=current_user.user_id,
                            add_item_form=add_item_form)
   else:
     permitted_users = ListPermission.query.filter_by(list_id=list_id).all()
@@ -150,6 +153,7 @@ def edit_list(list_id):
       return render_template('edit_list.html',
                              list=list,
                              list_items=list_items,
+                             user_id=current_user.user_id,
                              title='Edit List')
     else:
       flash("You are not permitted to edit this list")
@@ -190,6 +194,8 @@ def add_list_permission(list_id):
 def claim_item(item_id):
   list_item = ListItem.query.filter_by(list_item_id=item_id).first()
   print("claim_item for item {}".format(list_item.list_item_id))
+  payload = request.get_json()
+  print(payload)
   if list_item is not None:
     #Check if user is permitted to edit list
     permission = ListPermission.query.filter_by(list_id=list_item.list_id).first()
@@ -198,9 +204,21 @@ def claim_item(item_id):
       print("User has permission")
       if list_item.purchaser_id is None:
         print("no current purchaser")
-        list_item.purchaser_id = current_user.user_id
-        return jsonify({'claim_successful': True})
+        if payload['claim'] != "true":
+          list_item.purchaser_id = current_user.user_id
+          db.session.commit()
+          return jsonify({'claim_successful': True})
+        else:
+          return jsonify({'claim_successful': False, 'message': "Cannot unclaim item you have not claimed"})
       else:
+        if list_item.purchaser_id == current_user.user_id:
+          if payload['claim'] == 'true':
+            return jsonify({'claim_successful': False, 'message': "You've already claimed this item."})
+          else:
+            #Unclaim the item
+            list_item.purchaser_id = None
+            db.session.commit()
+            return jsonify({'claim_successful': True, 'message': "Successfully unclaimed the item."})
         #Someone else has claimed it
         print("Someone else has claimed this")
         return jsonify({'claim_successful' : False, 'message': 'Item is already claimed'})
@@ -209,3 +227,21 @@ def claim_item(item_id):
       return jsonify({'claim_successful': False, 'message': "User doesn't have permissions on this list"})
   else:
     return jsonify({'claim_successful': False, 'message': "List does not exist"})
+
+@app.route('/test')
+def test():
+  return render_template("test.html")
+
+@app.route('/list_items/<list_id>')
+@login_required
+def list_items(list_id):
+  permitted_user = ListPermission.query.filter(and_(ListPermission.list_id == list_id, ListPermission.user_id == current_user.user_id)).first()
+  list_owner = List.query.filter_by(creator_id=current_user.user_id).first()
+  if(permitted_user is not None or (list_owner is not None and list_owner == current_user.user_id)):
+    list_items = ListItem.query.filter_by(list_id=list_id).all()
+    jsonable_items = list(map(lambda item: item.to_dict(), list_items))
+    return jsonify({'status': 'Successful', 'items': jsonable_items})
+  else:
+    response = jsonify({'status': 'Failure: User Not Authorized'})
+    response.status_code = 403
+    return response

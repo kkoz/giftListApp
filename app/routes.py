@@ -245,3 +245,8 @@ def list_items(list_id):
     response = jsonify({'status': 'Failure: User Not Authorized'})
     response.status_code = 403
     return response
+
+
+@app.route('/errortest')
+def error_test():
+  raise Exception("This is a test exception")
